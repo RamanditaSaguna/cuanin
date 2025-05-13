@@ -1,0 +1,5 @@
+// config.js.example
+// Rename this file to config.js and replace the placeholder with your actual OpenRouter API key.
+// Make sure config.js is listed in your .gitignore file to prevent exposing your key.
+
+window.OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY_HERE";
