@@ -636,11 +636,31 @@
         }
 
         // --- OpenRouter API Integration ---
+        function getUserApiKey() {
+            let userApiKey = localStorage.getItem('userOpenRouterApiKey');
+            if (!userApiKey) {
+                userApiKey = prompt("Please enter your OpenRouter API Key to use the AI chat feature:");
+                if (userApiKey && userApiKey.trim() !== "") {
+                    localStorage.setItem('userOpenRouterApiKey', userApiKey);
+                } else {
+                    return null; // User cancelled or entered empty key
+                }
+            }
+            return userApiKey;
+        }
+
         async function getAIResponse(chatHistoryWithCurrentUserMessage) { // Parameter changed
-            const apiKey = window.OPENROUTER_API_KEY; // Using key from config.js
+            let apiKey = getUserApiKey(); 
+
+            // Fallback for local development if user didn't provide one via prompt and config.js has a non-placeholder key
+            if (!apiKey && typeof window.OPENROUTER_API_KEY !== 'undefined' && window.OPENROUTER_API_KEY !== "YOUR_OPENROUTER_API_KEY_HERE") {
+                apiKey = window.OPENROUTER_API_KEY;
+                console.log("Using API key from local config.js as user did not provide one via prompt.");
+            }
+
             if (!apiKey) {
-                console.error("OpenRouter API Key not found. Make sure config.js is loaded and the key is set.");
-                return "API Key is missing. Please configure the application.";
+                console.error("OpenRouter API Key not provided by user and not found in local config or is placeholder.");
+                return "API Key is missing. Please provide your OpenRouter API Key (you might need to refresh and enter it when prompted) or configure it locally if you are developing.";
             }
             const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
             const model = "google/gemini-flash-1.5";
