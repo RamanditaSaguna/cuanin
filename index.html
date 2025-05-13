@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cuan.AI Simulation</title>
+    <style>
+        :root {
+            --primary-blue: #0D2A5F;
+            --background-grey: #F0F0F5;
+            --content-white: #FFFFFF;
+            --text-dark: #333333;
+            --text-light-grey: #777777;
+            --ai-bubble-grey: #E9E9EB;
+            --user-bubble-black: #000000;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--background-grey);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for scroll */
+            min-height: 100vh;
+            padding-top: 20px; /* Add some padding at the top */
+            padding-bottom: 20px;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 400px; /* Constrain width for desktop */
+            background-color: var(--content-white); /* Default background for screens */
+            border-radius: 20px; /* Rounded corners for the container */
+            overflow: hidden; /* Clip content */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            min-height: 700px; /* Give a minimum height */
+        }
+
+        .screen {
+            display: none; /* Hide screens by default */
+            flex-direction: column;
+            flex-grow: 1; /* Allow screen content to grow */
+        }
+
+        .screen.active {
+            display: flex; /* Show active screen */
+        }
+
+        /* Header Styles */
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee; /* Subtle separator */
+            background-color: var(--content-white); /* Header background */
+        }
+
+        .header .back-arrow {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-dark);
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        .header .logo {
+            flex-grow: 1;
+            text-align: center;
+            font-size: 20px;
+            font-weight: normal;
+        }
+
+        .header .logo b {
+            font-weight: bold;
+        }
+
+        /* Content Area Styles */
+        .content-area {
+            padding: 25px 20px;
+            flex-grow: 1;
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+
+        .content-panel {
+             /* Panel already white from container */
+            border-radius: 15px; /* Rounded corners for inner panels if needed, but container handles main rounding */
+            padding: 20px;
+            margin: 0 15px 15px 15px; /* Margin for panels inside screens */
+            background-color: var(--content-white);
+        }
+
+        /* Button Styles */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-blue);
+            color: var(--content-white);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-light-grey);
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: calc(100% - 20px); /* Adjust for padding */
+            padding: 10px;
+            border: none;
+            border-bottom: 1px solid #eee; /* Underline style */
+            font-size: 16px;
+            color: var(--text-dark);
+            background-color: transparent;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-bottom: 1px solid var(--primary-blue);
+        }
+
+        .screen-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-blue);
+            margin-bottom: 25px;
+        }
+
+        /* Screen 2: Loading Screen */
+        #screen-loading .content-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        #screen-loading .logo {
+            font-size: 30px;
+            margin-bottom: 15px;
+        }
+         #screen-loading .logo b {
+            font-weight: bold;
+         }
+
+        #screen-loading .loading-text {
+            font-size: 14px;
+            color: var(--text-light-grey);
+        }
+
+        /* Screen 3: AI Summary */
+        #screen-summary .content-area {
+            text-align: center;
+        }
+
+        #screen-summary .logo {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+         #screen-summary .logo b {
+            font-weight: bold;
+         }
+
+        #screen-summary .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #screen-summary .location {
+            font-size: 14px;
+            color: var(--text-light-grey);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #screen-summary .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        #screen-summary .business-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #ccc; /* Placeholder color */
+            margin: 0 auto 10px auto;
+            display: flex; /* For potential image centering */
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* If using an actual image */
+             /* Example using an online image */
+             background-image: url('https://via.placeholder.com/100/CCCCCC/808080?text=Pills');
+             background-size: cover;
+             background-position: center;
+        }
+
+        #screen-summary .business-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        #screen-summary .description {
+            font-size: 14px;
+            color: var(--text-dark);
+            text-align: left;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        #screen-summary .gain-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #screen-summary .gain-subtitle {
+            font-size: 12px;
+            color: var(--text-light-grey);
+            margin-bottom: 25px;
+        }
+
+        /* Screen 4: AI Ask More (Chat) */
+        #screen-chat {
+             background-color: var(--background-grey); /* Chat screen has grey background */
+        }
+
+        #screen-chat .header .logo {
+            font-size: 18px; /* Smaller logo in chat header */
+        }
+
+        #screen-chat .chat-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: var(--content-white); /* Chat messages on white */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-message {
+            display: flex;
+            align-items: flex-end; /* Align items to bottom */
+            max-width: 80%; /* Limit message width */
+        }
+
+        .chat-message.ai {
+            align-self: flex-start; /* Align AI messages to left */
+        }
+
+        .chat-message.user {
+            align-self: flex-end; /* Align User messages to right */
+            flex-direction: row-reverse; /* Reverse order for user */
+        }
+
+        .chat-message .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #ccc; /* Placeholder */
+            margin-right: 10px;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+         .chat-message.ai .avatar {
+             /* Placeholder for AI avatar - could use logo snippet or icon */
+             background-color: var(--primary-blue);
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             color: white;
+             font-size: 12px;
+             font-weight: bold;
+         }
+         .chat-message.ai .avatar::before {
+             content: "AI"; /* Simple text placeholder */
+         }
+
+
+        .chat-message.user .avatar {
+            display: none; /* No avatar for user */
+        }
+
+        .chat-message .bubble {
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative; /* For potential edit icon positioning */
+        }
+
+        .chat-message.ai .bubble {
+            background-color: var(--ai-bubble-grey);
+            color: var(--text-dark);
+            border-bottom-left-radius: 5px; /* Tail effect */
+            margin-left: 10px; /* Space from avatar */
+        }
+
+        .chat-message.user .bubble {
+            background-color: var(--user-bubble-black);
+            color: var(--content-white);
+            border-bottom-right-radius: 5px; /* Tail effect */
+            margin-right: 5px; /* Space for edit icon */
+        }
+
+        .chat-message.user .edit-icon {
+            font-size: 16px;
+            color: var(--text-light-grey);
+            cursor: pointer;
+            margin-left: 5px; /* Space from bubble */
+            align-self: center; /* Center vertically with bubble */
+        }
+
+        .chat-input-area {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: var(--content-white);
+            border-top: 1px solid #eee;
+        }
+
+        .chat-input-area input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+         .chat-input-area input:focus {
+             outline: none;
+             border-color: var(--primary-blue);
+         }
+
+        .chat-input-area .send-icon {
+            font-size: 24px;
+            color: var(--text-light-grey);
+            cursor: pointer;
+        }
+
+        .typing-indicator {
+            font-style: italic;
+            color: var(--text-light-grey);
+            font-size: 12px;
+            padding: 5px 0;
+            align-self: flex-start; /* Align left */
+            margin-left: 40px; /* Align with AI messages */
+        }
+
+        /* Helper class */
+        .hidden {
+            display: none !important;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+
+        <!-- Screen 1: Sign Up -->
+        <div id="screen-signup" class="screen active">
+            <div class="header">
+                <span class="back-arrow" onclick="showScreen('screen-signup')">←</span>
+                <div class="logo"><b>Cuan</b>.AI</div>
+            </div>
+            <div class="content-area">
+                <div class="screen-title">Fill your business information</div>
+                <form id="signup-form">
+                    <div class="form-group">
+                        <label for="name">Name*</label>
+                        <input type="text" id="name" value="Thom Haye" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="company">Company Name</label>
+                        <input type="text" id="company" value="Farmasindo">
+                    </div>
+                    <div class="form-group">
+                        <label for="location">Business Location</label>
+                        <input type="text" id="location" value="Jalan Dago No 34, Bandung, Indonesia">
+                    </div>
+                    <div class="form-group">
+                        <label for="interests">Business Interests</label>
+                        <input type="text" id="interests" value="Healthcare">
+                    </div>
+                    <div class="form-group">
+                        <label for="capital">Estimated Initial Capital</label>
+                        <input type="text" id="capital" value="Rp. 2.000.000.000,00">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Create a Password</label>
+                        <input type="password" id="password" value="************" required>
+                    </div>
+                    <button type="submit" class="btn">Let's start</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Screen 2: Loading -->
+        <div id="screen-loading" class="screen">
+            <!-- No header for loading screen -->
+            <div class="content-area">
+                <div class="logo"><b>Cuan</b>.AI</div>
+                <div class="loading-text">Saving user information</div>
+            </div>
+        </div>
+
+        <!-- Screen 3: AI Summary -->
+        <div id="screen-summary" class="screen">
+            <div class="header">
+                <span class="back-arrow" onclick="showScreen('screen-signup')">←</span>
+                <!-- No centered logo in header here -->
+            </div>
+            <div class="content-area">
+                <div class="logo"><b>Cuan</b>.AI</div>
+                <div class="company-name">Farmasindo</div>
+                <div class="location">
+                    <span>📍</span> <!-- Simple location pin emoji -->
+                    Bandung, Indonesia
+                </div>
+                <div class="section-title">Recommended Business Model</div>
+                <div class="business-image">
+                    <!-- Image set via CSS background -->
+                </div>
+                <div class="business-name">Pharmacy</div>
+                <div class="description">
+                    Your profile shows enormous potential to build a medium to large-scale healthcare business. The combination of significant capital, focused interest and relevant expertise in the medical field, as well as a location in a major city like Bandung, opens up opportunities for this type of venture that requires considerable initial investment and has the potential for high impact and returns.
+                </div>
+                <div class="section-title">Potential gain</div>
+                <div class="gain-value">Rp.12.000.000.000,00</div>
+                <div class="gain-subtitle">(Twelve Billion Rupiah)</div>
+                <button class="btn" onclick="showScreen('screen-chat')">Ask More</button>
+            </div>
+        </div>
+
+        <!-- Screen 4: AI Ask More (Chat) -->
+        <div id="screen-chat" class="screen">
+            <div class="header">
+                <span class="back-arrow" onclick="showScreen('screen-summary')">←</span>
+                <div class="logo"><b>Cuan</b>.AI</div>
+            </div>
+            <div class="chat-area" id="chat-area">
+                <!-- Chat messages will be added here -->
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder='Tanya ke kami disini! ("Apa itu ROI?")'>
+                <span class="send-icon" id="send-button">🖼️</span> <!-- Using image icon as send -->
+            </div>
+        </div>
+
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const screens = document.querySelectorAll('.screen');
+        const signupForm = document.getElementById('signup-form');
+        const chatArea = document.getElementById('chat-area');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+
+        // --- Context Storage ---
+        let cuanAIContext = {
+            businessInfo: {},
+            recommendation: {
+                companyName: "Farmasindo", // From Screen 3
+                location: "Bandung, Indonesia",
+                recommendedModel: "Pharmacy",
+                description: "Your profile shows enormous potential to build a medium to large-scale healthcare business. The combination of significant capital, focused interest and relevant expertise in the medical field, as well as a location in a major city like Bandung, opens up opportunities for this type of venture that requires considerable initial investment and has the potential for high impact and returns.",
+                potentialGain: "Rp.12.000.000.000,00"
+            },
+            chatHistory: [] // To store {role: 'user'/'assistant', content: '...'}
+        };
+
+        // --- Screen Navigation ---
+        function showScreen(screenId) {
+            screens.forEach(screen => {
+                screen.classList.remove('active');
+            });
+            const activeScreen = document.getElementById(screenId);
+            if (activeScreen) {
+                activeScreen.classList.add('active');
+            } else {
+                console.error("Screen not found:", screenId);
+                // Fallback to first screen if error
+                 document.getElementById('screen-signup').classList.add('active');
+            }
+
+             // Special handling for chat screen init
+             if (screenId === 'screen-chat' && chatArea.children.length === 0) {
+                initializeChat();
+            }
+        }
+
+        // --- Event Listeners ---
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevent actual form submission
+            // Store business info
+            cuanAIContext.businessInfo = {
+                name: document.getElementById('name').value,
+                companyName: document.getElementById('company').value,
+                businessLocation: document.getElementById('location').value,
+                businessInterests: document.getElementById('interests').value,
+                estimatedCapital: document.getElementById('capital').value
+            };
+            // Clear chat history for a new session if user goes back and resubmits
+            cuanAIContext.chatHistory = []; 
+            
+            showScreen('screen-loading');
+            // Simulate loading
+            setTimeout(() => {
+                showScreen('screen-summary');
+            }, 2500); // 2.5 seconds delay
+        });
+
+        sendButton.addEventListener('click', handleSendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSendMessage();
+            }
+        });
+
+        // --- Chat Functionality ---
+        function initializeChat() {
+            // Clear previous history if any, then add initial messages
+            cuanAIContext.chatHistory = [];
+            addMessageToHistoryAndUI("Hello, I'm Cuan.AI What can i help you for today?", 'assistant');
+            addMessageToHistoryAndUI("How much is the estimated return after 1 year?", 'user');
+            addMessageToHistoryAndUI("Your estimated return are based on several factor. But based on your initial information, your estimated ROI after 1 year is approximately Rp. 30.000.000,00 - Rp. 150.000.000,00.", 'assistant');
+            addMessageToHistoryAndUI("How much worker do i need to have?", 'user');
+            addMessageToHistoryAndUI("You approximately need around 10-20 workers to make sure your business works properly.", 'assistant');
+        }
+
+        async function handleSendMessage() { // Made async
+            const userText = chatInput.value.trim();
+            if (userText === '') return;
+
+            addMessageToHistoryAndUI(userText, 'user');
+            chatInput.value = ''; // Clear input
+
+            // AI response using OpenRouter
+            showTypingIndicator(true);
+            try {
+                const aiResponse = await getAIResponse(cuanAIContext.chatHistory); // Pass full history
+                showTypingIndicator(false);
+                addMessageToHistoryAndUI(aiResponse, 'assistant');
+            } catch (error) {
+                showTypingIndicator(false);
+                addMessageToHistoryAndUI("Sorry, I couldn't connect to the AI. Please try again.", 'assistant'); // Ensure AI errors are marked as 'assistant'
+                console.error("Error fetching from OpenRouter:", error);
+            }
+        }
+
+        function addMessageToHistoryAndUI(text, role) { // Renamed and role is 'user' or 'assistant'
+            // Add to UI
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', role === 'user' ? 'user' : 'ai'); // Adjust class based on role
+
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.classList.add('bubble');
+            bubbleDiv.textContent = text;
+
+            if (role === 'assistant') { // AI message
+                const avatarDiv = document.createElement('div');
+                avatarDiv.classList.add('avatar');
+                messageDiv.appendChild(avatarDiv);
+                messageDiv.appendChild(bubbleDiv);
+            } else { // User message
+                messageDiv.appendChild(bubbleDiv);
+                const editIcon = document.createElement('span');
+                editIcon.classList.add('edit-icon');
+                editIcon.textContent = '✎';
+                messageDiv.appendChild(editIcon);
+            }
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            // Add to history if it's not a temporary UI-only message (like typing indicator)
+            if (role === 'user' || role === 'assistant') {
+                 cuanAIContext.chatHistory.push({ role: role, content: text });
+            }
+        }
+
+        // Original addMessage for UI only elements if needed, or can be removed if addMessageToHistoryAndUI covers all.
+        // For now, let's assume all messages that appear in chat should be part of history.
+        // If not, we might need to differentiate. The current `addMessageToHistoryAndUI` handles both.
+        // Let's rename the old addMessage to avoid confusion if it was used elsewhere, or remove if not.
+        // For simplicity, I'll assume the new function replaces the old one for chat messages.
+        // The old function was: function addMessage(text, type)
+        // The new function is: function addMessageToHistoryAndUI(text, role)
+        // I will remove the old addMessage function signature if it's fully replaced.
+        // It seems the old `addMessage` is fully replaced by `addMessageToHistoryAndUI`.
+
+        function showTypingIndicator(show) {
+             // Remove existing indicator first
+            const existingIndicator = chatArea.querySelector('.typing-indicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+
+            if (show) {
+                const indicatorDiv = document.createElement('div');
+                indicatorDiv.classList.add('typing-indicator');
+                indicatorDiv.textContent = 'Cuan.AI is typing...';
+                chatArea.appendChild(indicatorDiv);
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+        }
+
+        // --- OpenRouter API Integration ---
+        async function getAIResponse(chatHistoryWithCurrentUserMessage) { // Parameter changed
+            const apiKey = window.OPENROUTER_API_KEY; // Using key from config.js
+            if (!apiKey) {
+                console.error("OpenRouter API Key not found. Make sure config.js is loaded and the key is set.");
+                return "API Key is missing. Please configure the application.";
+            }
+            const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
+            const model = "google/gemini-flash-1.5";
+
+            // Construct the system message with business info and recommendation
+            let systemContent = `You are Cuan.AI, a helpful business assistant. Be concise and helpful.
+Current User's Business Information:
+Name: ${cuanAIContext.businessInfo.name || 'Not provided'}
+Company Name: ${cuanAIContext.businessInfo.companyName || 'Not provided'}
+Business Location: ${cuanAIContext.businessInfo.businessLocation || 'Not provided'}
+Business Interests: ${cuanAIContext.businessInfo.businessInterests || 'Not provided'}
+Estimated Initial Capital: ${cuanAIContext.businessInfo.estimatedCapital || 'Not provided'}
+
+Your Initial Recommendation for the User:
+Company: ${cuanAIContext.recommendation.companyName}
+Location: ${cuanAIContext.recommendation.location}
+Recommended Model: ${cuanAIContext.recommendation.recommendedModel}
+Details: ${cuanAIContext.recommendation.description}
+Potential Gain: ${cuanAIContext.recommendation.potentialGain}
+
+Now, continue the conversation based on the following chat history and the latest user message.`;
+
+            const messagesForAPI = [
+                { "role": "system", "content": systemContent },
+                ...chatHistoryWithCurrentUserMessage // Spread the chat history
+            ];
+            
+            const requestBody = {
+                model: model,
+                messages: messagesForAPI,
+            };
+            console.log("Sending to OpenRouter:", JSON.stringify(requestBody, null, 2)); // Log request body
+
+            try {
+                const response = await fetch(openRouterUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        // Optional: Add HTTP-Referer or X-Title headers if desired by OpenRouter for tracking
+                        // 'HTTP-Referer': 'http://localhost', // Replace with your app's URL
+                        // 'X-Title': 'Cuan.AI Simulation', // Replace with your app's name
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        // If response is not JSON, use text
+                        errorData = { error: { message: await response.text() } };
+                    }
+                    console.error(`OpenRouter API Error (Status ${response.status}):`, errorData);
+                    throw new Error(`API request failed with status ${response.status}: ${errorData.error?.message || response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log("Received from OpenRouter:", JSON.stringify(data, null, 2)); // Log full response data
+                if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
+                    return data.choices[0].message.content.trim();
+                } else {
+                    console.error("Unexpected response structure from OpenRouter:", data);
+                    return "I received an unexpected response. Please try again.";
+                }
+            } catch (error) {
+                console.error("Error calling OpenRouter API:", error);
+                // Return a user-friendly error message or re-throw for global handling
+                return "Sorry, I'm having trouble connecting to the AI service right now. Please try again later.";
+            }
+        }
+
+        // --- Initial Setup ---
+        // Show the first screen initially
+        showScreen('screen-signup');
+
+    </script>
+</body>
+</html>
