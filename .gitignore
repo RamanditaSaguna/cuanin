@@ -1,0 +1,13 @@
+# Ignore the actual config file containing sensitive credentials
+config.js
+
+# Ignore common OS-generated files
+.DS_Store
+Thumbs.db
+
+# Ignore Node.js dependency folder (if you were to add a backend later)
+node_modules/
+
+# Ignore build directories (common for some projects)
+dist/
+build/
